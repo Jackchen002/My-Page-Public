@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<script>
+  const theme = localStorage.getItem('theme');
+  if (theme === 'dark') {
+    document.documentElement.classList.add('dark');
+  }
+  
+  // 添加环境配置
+  window.APP_CONFIG = {
+    // 动态获取当前环境的配置
+    getApiBaseUrl: function() {
+      const protocol = window.location.protocol;
+      const hostname = window.location.hostname;
+      const port = window.location.port;
+      
+      // 本地开发环境
+      if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        return `${protocol}//${hostname}:8080/api`;
+      }
+      
+      // 云服务器环境
+      if (port && port !== '80' && port !== '443') {
+        // 如果有端口号，使用当前端口
+        return `${protocol}//${hostname}:${port}/api`;
+      } else {
+        // 使用默认端口
+        return `${protocol}//${hostname}/api`;
+      }
+    }
+  };
+  
+  console.log('API Base URL will be:', window.APP_CONFIG.getApiBaseUrl());
+</script>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Page</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config = {darkMode: 'class'}</script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="styles.css" rel="stylesheet">
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 min-h-screen transition-all duration-500">
+    <!-- 顶部导航栏 -->
+    <nav class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg shadow-lg sticky top-0 z-50 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <i class="fas fa-newspaper text-2xl text-indigo-600 dark:text-indigo-400"></i>
+                    <h1 class="text-xl font-bold text-gray-800 dark:text-white">My Page</h1>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <!-- 管理员缓存管理按钮 -->
+                    <div id="adminControls" class="hidden mb-0">
+                        <button id="cacheManageBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+                            <i class="fas fa-memory mr-2"></i>
+                            缓存管理
+                        </button>
+                    </div>
+
+                    <!-- 主题切换按钮 -->
+                    <button id="themeToggle" class="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                        <i class="fas fa-moon dark:hidden"></i>
+                        <i class="fas fa-sun hidden dark:block"></i>
+                    </button>
+                    
+                    <!-- 用户菜单 -->
+                    <div class="relative">
+                        <button id="userMenuBtn" class="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                            <i class="fas fa-user-circle text-xl"></i>
+                            <span id="userDisplayName">未登录</span>
+                        </button>
+                        <div id="userMenu" class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+                            <div id="userMenuContent"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要内容区域 -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- 加载状态 -->
+        <div id="loadingSpinner" class="flex justify-center items-center py-20">
+            <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-indigo-600"></div>
+        </div>
+
+        <!-- 内容容器 -->
+        <div id="contentContainer" class="hidden">
+            <!-- 信息概览 -->
+            <div class="mb-8">
+                <!-- <h2 class="text-3xl font-bold text-gray-800 dark:text-white mb-6 animate-fadeIn">
+                    <i class="fas fa-calendar-day mr-2"></i>
+                    每日信息
+                </h2> -->
+                <!-- 时间显示 -->
+                <div class="text-2xl dark:text-gray-400 mb-4">
+                    <i class="fas fa-clock mr-2"></i>
+                    <span id="current-date"></span>
+                </div>
+            </div>    
+            
+            <!-- 内容网格 -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+                <!-- 随机一言-->                
+                <div class="content-card bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden lg:col-span-3 xl:col-span-5">
+                    <div class="p-2">                        <div class="flex items-center mb-1">
+                            <h3 class="text-lg font-semibold text-gray-800 dark:text-white">
+                                <i class="fas fa-lightbulb mr-1 text-yellow-500 text-lg"></i>
+                                随机一言
+                            </h3>
+                        </div>
+                        <div id="quoteContent" class="min-h-[50px] flex items-center">
+                            <div class="animate-pulse space-y-1 w-full">
+                                <div class="h-1 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                                <div class="h-1 bg-gray-200 dark:bg-gray-700 rounded w-4/5"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- NASA 每日天文图-->
+                <div class="content-card bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden lg:col-span-2 xl:col-span-3">
+                    <div class="p-4">                        <div class="flex items-center mb-3">
+                            <h3 class="text-lg font-semibold text-gray-800 dark:text-white">
+                                <i class="fas fa-rocket mr-2 text-blue-500"></i>
+                                NASA 每日天文图
+                            </h3>
+                        </div>
+                        <div id="nasaContent">
+                            <div class="animate-pulse bg-gray-200 dark:bg-gray-700 h-72 rounded-lg"></div>
+                        </div>
+                    </div>
+                </div>                
+                <!-- 每日一猫-->
+                <div class="content-card bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden lg:col-span-2 xl:col-span-3">
+                    <div class="p-4">                        <div class="flex items-center mb-3">
+                            <h3 class="text-lg font-semibold text-gray-800 dark:text-white">
+                                <i class="fas fa-cat mr-2 text-orange-500"></i>
+                                每日の喵图
+                            </h3>
+                        </div>
+                        <div id="catContent" class="text-center">
+                            <div class="animate-pulse bg-gray-200 dark:bg-gray-700 h-48 rounded-lg"></div>
+                        </div>
+                    </div>
+                </div>                
+                
+                <!-- 动漫语录-->
+                <div class="content-card bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden lg:col-span-2 xl:col-span-3">
+                    <div class="p-4">                        <div class="flex items-center mb-3">
+                            <h3 class="text-lg font-semibold text-gray-800 dark:text-white">
+                                <i class="fas fa-quote-left mr-2 text-purple-500"></i>
+                                动漫语录
+                            </h3>
+                        </div>
+                        <div id="animeContent" class="min-h-[130px] flex flex-col justify-center">
+                            <div class="animate-pulse space-y-3">
+                                <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                                <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6"></div>
+                                <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>                
+                <!-- 历史上的今天-->
+                <div class="content-card bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden lg:col-span-2 xl:col-span-3">
+                    <div class="p-4">                        <div class="flex items-center mb-3">
+                            <h3 class="text-lg font-semibold text-gray-800 dark:text-white">
+                                <i class="fas fa-history mr-2 text-green-500"></i>
+                                历史上的今天
+                            </h3>
+                        </div>
+                        <div id="historyContent" class="min-h-[110px] flex flex-col justify-center">
+                            <div class="animate-pulse space-y-3">
+                                <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                                <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+                                <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                            </div>
+                        </div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                            数据来源：apihz.cn
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 热点新闻 -->
+            <div class="mt-12">
+                <h2 class="text-3xl font-bold text-gray-800 dark:text-white mb-6">
+                    <i class="fas fa-fire mr-2 text-red-500"></i>
+                    热点新闻
+                </h2>
+                <div class="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                    数据来源：hot_news
+                </div>                  
+                <!-- 新闻平台标签 -->
+                <div class="flex flex-wrap gap-2 mb-6">
+                    <button class="news-tab active" data-platform="baidu">百度热搜</button>
+                    <button class="news-tab" data-platform="weibo">微博热搜</button>
+                    <button class="news-tab" data-platform="bilibili">哔哩哔哩</button>
+                    <button class="news-tab" data-platform="douyin">抖音</button>
+                </div>
+
+                <!-- 新闻内容 -->
+                <div id="newsContent" class="space-y-4">
+                    <!-- 新闻项将通过 JavaScript 动态加载 -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 登录模态框 -->
+    <div id="loginModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-8 max-w-md w-full mx-4">
+            <h3 class="text-2xl font-bold mb-6 text-gray-800 dark:text-white">登录</h3>
+            <form id="loginForm">
+                <div class="mb-4">
+                    <label class="block text-gray-700 dark:text-gray-300 mb-2">用户名</label>
+                    <input type="text" id="username" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 dark:text-gray-300 mb-2">密码</label>
+                    <input type="password" id="password" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white">
+                </div>
+                <div class="flex space-x-4">
+                    <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg transition-colors">登录</button>
+                    <button type="button" id="closeLoginModal" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-3 rounded-lg transition-colors">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>    <script src="script.js"></script>
+</body>
+</html>

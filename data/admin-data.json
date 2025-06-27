@@ -1,0 +1,12 @@
+{
+  "currentUser": {
+    "id": 1,
+    "username": "admin",
+    "password": "123456",
+    "role": "admin"
+  },
+  "globalSettings": {
+    "theme": "light",
+    "lastRefreshTime": 1751000136850
+  }
+}

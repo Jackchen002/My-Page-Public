@@ -1,0 +1,21 @@
+{
+  "admin": {
+    "id": 1,
+    "username": "admin",
+    "password": "123456",
+    "role": "admin"
+  },
+  "user": {
+    "id": 2,
+    "username": "user",
+    "password": "123456",
+    "role": "user"
+  },
+  "jack": {
+    "id": 1750338304253,
+    "username": "jack",
+    "password": "123456",
+    "role": "user",
+    "createdAt": "2025-06-19T13:05:04.253Z"
+  }
+}
